@@ -1,0 +1,12 @@
+{
+  "language_added": "Language ``{lang}`` was added for {mention}.",
+  "language_not_found": "Language ``{lang}`` could not be found, {mention}!" ,
+  "user_has_language_already": "You have the language {lang} already, {mention}!",
+  "language_removed": "Language ``{lang}`` was removed for {mention}.",
+  "language_not_existing": "This language doesn't exist, {mention}!",
+  "language_not_yet_requested": "You haven't requested the language ``{lang}`` yet, {mention}!",
+  "all_languages_removed": "All languages you have requested were removed, {mention}.",
+  "all_roles_removed": "__**All**__ language roles were **deleted**, {mention}!",
+  "no_permission": "You have not enough permissions to do that, {mention}!",
+  "bot_no_permission": "I have not enough permissions to do that, {mention}"
+}
