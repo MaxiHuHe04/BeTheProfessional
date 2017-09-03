@@ -1,0 +1,58 @@
+{
+  "language_added": "Language ``{lang}`` was added for {mention}.",
+  "language_not_found": "Language ``{lang}`` could not be found, {mention}!" ,
+  "user_has_language_already": "You have the language ``{lang}`` already, {mention}!",
+  "language_removed": "Language ``{lang}`` was removed for {mention}.",
+  "language_not_existing": "This language doesn't exist, {mention}!",
+  "language_not_yet_requested": "You haven't requested the language ``{lang}`` yet, {mention}!",
+  "all_languages_removed": "All languages you have requested were removed, {mention}.",
+  "all_roles_removed": "__**All**__ language roles were **deleted**, {mention}!",
+  "language_already_registered": "The language ``{lang}`` is already registered, {mention}!",
+  "create_lang_role_already_existing": "The role ``{role}`` does already exist on this server, {mention}!",
+  "language_registered": "The language ``{lang}`` was successfully registered, {mention}.",
+  "language_unregistered": "The language ``{lang}`` was successfully removed from BeTheProfessional, {mention}.",
+  "no_permission": "You have not enough permissions to do that, {mention}!",
+  "bot_no_permission": "I have not enough permissions to do that, {mention}",
+  "private_channel": "There are no roles in private chats!",
+  "help_sent": "The help was sent to your private chat, {mention}",
+  "commands": {
+    "syntax": {
+      "+": "<language>",
+      "-": "<language>",
+      "*": "<language>",
+      "/": "<language>"
+    },
+    "description": {
+      "+": "Adds a language (multiple languages at once: ``;``)",
+      "-": "Removes a language (all languages with ``-*``)",
+      "*": "Adds a language to the bot (only for admins)",
+      "delLangRanks": "Removes all roles created by the bot (for admins)",
+      "?": "Displays this help"
+    }
+  },
+  "help_embed": {
+    "title": "BeTheProfessional help",
+    "description": "Help for BeTheProfessional",
+    "fields": [
+      {
+        "name": "Prefix",
+        "value": "{prefix}"
+      },
+      {
+        "name": "Commands",
+        "value": "{commands}"
+      },
+      {
+        "name": "Available languages/topics ({language_amount})",
+        "value": "```{languages}```"
+      }
+    ],
+    "footer": {
+      "text": "Bot by @MaxiHuHe04#8905",
+      "icon_url": "https://cdn.discordapp.com/avatars/349222867344424970/9e57783e0ad2dfbe786b6e1fe8472c01.webp?size=256"
+    },
+    "color": 3066993,
+    "__color": "0x2ecc71",
+    "timestamp": "{timestamp}"
+  }
+}

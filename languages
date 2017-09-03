@@ -1,4 +1,3 @@
-.NET
 APL
 ActionScript
 Angular
@@ -8,45 +7,62 @@ AutoIt
 Bash
 Basic
 Batch
+Brainfuck
 C
 C#
 C++
 CSS
-Common-Lisp
+CoffeeScript
+Common Lisp
+D
 Delphi
 Elixir
+EmacsLisp
 Erlang
 F#
+Factor
 Forth
 Fortran
 Go
 Groovy
 HTML
 Haskell
+Hy
 J
 Java
+Java DiscordBot
 JavaScript
+JavaScript DiscordBot
+K
 Kotlin
 Lisp
 Lua
-ML
 Matlab
+Maxima
 OCaml
 Objective-C
 PHP
 Pascal
 Perl
+Perl6
 PowerShell
+Prolog
 Python
+Python DiscordBot
 R
+Racket
+React
 Ruby
 Rust
 SQL
 Scala
 Scheme
 Scratch
+Self
 Smalltalk
-Standard-ML
+Standard ML
 Swift
 TypeScript
+VimScript
 VisualBasic
+WolframLanguage
