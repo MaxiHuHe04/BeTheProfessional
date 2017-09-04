@@ -1,3 +1,5 @@
+A
+A+
 APL
 ActionScript
 Angular
@@ -15,6 +17,7 @@ CSS
 CoffeeScript
 Common Lisp
 D
+Datalog
 Delphi
 Elixir
 EmacsLisp
@@ -39,6 +42,7 @@ Lisp
 Lua
 Matlab
 Maxima
+Nial
 OCaml
 Objective-C
 PHP
@@ -47,8 +51,10 @@ Perl
 Perl6
 PowerShell
 Prolog
+Pure
 Python
 Python DiscordBot
+Q
 R
 Racket
 React

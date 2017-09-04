@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import time
 from datetime import datetime
 from typing import Tuple, Union, Set
 
@@ -46,8 +47,12 @@ def init_commands():
             await send_help(msg.author)
             return
 
-        if ";" in args:
-            result, affected = await add_languages(set(args.split(";")), msg.author)
+        if ";" in args and len(args) > 1:
+            args = args.strip()
+            if args[-1:] == ";":
+                args = args[:-1]
+
+            result, affected = await add_languages(set([x.strip() for x in args.split(";")]), msg.author)
         else:
             result = await add_language(args, msg.author)
             affected = args
@@ -78,9 +83,9 @@ def init_commands():
                                       dict(mention=msg.author.mention, lang=args))
             return
 
-        if discord.utils.find(lambda role: role.name.lower() == args.lower(),  msg.server.roles):
+        if discord.utils.find(lambda role: role.name.lower() == args.lower(), msg.server.roles):
             await send_translated_msg(msg.channel, "create_lang_role_already_existing",
-                                      dict(mention=msg.author.mention,  role=args))
+                                      dict(mention=msg.author.mention, role=args))
             return
 
         languages.append(args)
@@ -140,7 +145,7 @@ async def on_message(msg: discord.Message):
 
     cmd_name, (cmd_func, allow_private, bot_perm_needed, user_perm_needed) = get_cmd_ret
 
-    args = re.sub(r"({})\s*(.*)".format(re.escape(PREFIX + cmd_name)), r"\2", content)
+    args = rem_discord_markdown(content[len(PREFIX + cmd_name):].strip())
 
     if msg.channel.is_private and not allow_private:
         await send_translated_msg(msg.channel, "private_channel", dict(mention=author.mention))
@@ -214,8 +219,9 @@ async def create_lang(role: str, server: discord.Server):
         await client.create_role(server, name=get_case_role(role), mentionable=True,
                                  permissions=discord.Permissions.none())
     if not is_role(role, server):
-        print("Connection was too slow, sleep 4s")
-        await asyncio.sleep(4)
+        print("Connection was too slow, wait for role " + role)
+        if not await wait_until(is_role, 10, role=role, server=server):
+            raise Exception("ERROR: Role was not created")
 
 
 def has_role(user: discord.Member, role: str):
@@ -271,6 +277,10 @@ async def send_help(user: discord.User):
 
         help_embed = discord.Embed.from_data(embed_data)
 
+        if "footer" in embed_data and isinstance(embed_data["footer"], dict) and "text" in embed_data["footer"]:
+            help_embed.set_footer(text=embed_data["footer"]["text"],
+                                  icon_url=embed_data["footer"].get("icon_url", discord.Embed.Empty))
+
         await client.send_message(user, content=None, embed=help_embed)
 
 
@@ -291,6 +301,20 @@ def get_msg_data(*keys: str, default=None) -> Union[dict, str, float, bool]:
             current = msg_data.get(key, None)
 
     return current or default
+
+
+def rem_discord_markdown(text: str) -> str:
+    return re.sub(r"[`\n]+", "", text)
+
+
+async def wait_until(predicate, timeout, period=0.25, *args, **kwargs):
+    end = time.time() + timeout
+    while time.time() < end:
+        if predicate(*args, **kwargs):
+            return True
+
+        await asyncio.sleep(period)
+    return False
 
 
 sort_file()

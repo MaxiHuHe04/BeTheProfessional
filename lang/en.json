@@ -6,7 +6,7 @@
   "language_not_existing": "This language doesn't exist, {mention}!",
   "language_not_yet_requested": "You haven't requested the language ``{lang}`` yet, {mention}!",
   "all_languages_removed": "All languages you have requested were removed, {mention}.",
-  "all_roles_removed": "__**All**__ language roles were **deleted**, {mention}!",
+  "all_roles_removed": "**All** language roles were deleted, {mention}!",
   "language_already_registered": "The language ``{lang}`` is already registered, {mention}!",
   "create_lang_role_already_existing": "The role ``{role}`` does already exist on this server, {mention}!",
   "language_registered": "The language ``{lang}`` was successfully registered, {mention}.",
@@ -32,7 +32,7 @@
   },
   "help_embed": {
     "title": "BeTheProfessional help",
-    "description": "Help for BeTheProfessional",
+    "description": "Help for BeTheProfessional\n[GitHub Link](https://github.com/MaxiHuHe04/BeTheProfessional)",
     "fields": [
       {
         "name": "Prefix",
