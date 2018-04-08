@@ -13,7 +13,7 @@ client = discord.Client()
 MSG_LANG = "de"
 PREFIX = "."
 
-with open("languages", mode='r') as langFile:
+with open("languages", mode='r', encoding="utf-8") as langFile:
     languages = langFile.readlines()
 
 with open("lang/%s.json" % MSG_LANG, mode='r', encoding="utf-8") as msgLangFile:
@@ -73,6 +73,7 @@ def init_commands():
                                                "all_languages_removed" if result == 3 else
                                                "language_removed", dict(lang=args, mention=msg.author.mention))
 
+    # TODO: per-guild language additions/deletions
     async def cmd_create_lang(args: str, msg: discord.Message):
         if args == "":
             await send_help(msg.author)
@@ -83,7 +84,7 @@ def init_commands():
                                       dict(mention=msg.author.mention, lang=args))
             return
 
-        if discord.utils.find(lambda role: role.name.lower() == args.lower(), msg.server.roles):
+        if discord.utils.find(lambda role: role.name.lower() == args.lower(), msg.guild.roles):
             await send_translated_msg(msg.channel, "create_lang_role_already_existing",
                                       dict(mention=msg.author.mention, role=args))
             return
@@ -117,7 +118,7 @@ def init_commands():
 
     # noinspection PyUnusedLocal
     async def cmd_del_lang_ranks(args, msg: discord.Message):
-        await del_all_lang_roles(msg.server)
+        await del_all_lang_roles(msg.guild)
         await send_translated_msg(msg.channel, "all_roles_removed", dict(mention=msg.author.mention))
 
     add_command("+", cmd_add_lang, permissions=0x10000000)
@@ -147,14 +148,14 @@ async def on_message(msg: discord.Message):
 
     args = rem_discord_markdown(content[len(PREFIX + cmd_name):].strip())
 
-    if msg.channel.is_private and not allow_private:
+    if isinstance(msg.channel, discord.DMChannel) or isinstance(msg.channel, discord.GroupChannel) and not allow_private:
         await send_translated_msg(msg.channel, "private_channel", dict(mention=author.mention))
         print("Failed to execute command '{}' with args '{}' and message '{}' by user '{}' in private channel"
               .format(cmd_name, args, content, author.display_name))
         return
 
-    if not msg.channel.is_private:
-        bot_perm = msg.server.get_member(client.user.id).permissions_in(msg.channel).value
+    if not is_private(msg.channel):
+        bot_perm = msg.guild.get_member(client.user.id).permissions_in(msg.channel).value
         user_perm = author.permissions_in(msg.channel).value
 
         if bot_perm | bot_perm_needed != bot_perm:
@@ -170,9 +171,9 @@ async def on_message(msg: discord.Message):
                                                                                   author.display_name))
 
 
-async def send_translated_msg(channel, translation_name: str, formatting_dict: dict):
+async def send_translated_msg(channel: discord.abc.Messageable, translation_name: str, formatting_dict: dict):
     try:
-        await client.send_message(channel, get_msg_data(translation_name, default="").format(**formatting_dict))
+        await channel.send(get_msg_data(translation_name, default="").format(**formatting_dict))
     except discord.Forbidden:
         pass
 
@@ -182,9 +183,9 @@ async def add_language(lang: str, user: discord.Member) -> int:
         return 1
     if has_role(user, lang):
         return 2
-    if not is_role(lang, user.server):
-        await create_lang(lang, user.server)
-    await client.add_roles(user, get_server_role(lang, user.server))
+    if not is_role(lang, user.guild):
+        await create_lang(lang, user.guild)
+    await user.add_roles(get_guild_role(lang, user.guild), reason="User added a language")
     return 0
 
 
@@ -195,32 +196,32 @@ async def add_languages(lang_list: Set[str], user: discord.Member) -> Tuple[int,
         if has_role(user, lang):
             return 2, lang
 
-        if not is_role(lang, user.server):
-            await create_lang(lang, user.server)
+        if not is_role(lang, user.guild):
+            await create_lang(lang, user.guild)
 
-    await client.add_roles(user, *[get_server_role(lang, user.server) for lang in lang_list])
+    await user.add_roles(*[get_guild_role(lang, user.guild) for lang in lang_list])
     return 0, ", ".join(lang_list)
 
 
 async def rem_language(lang: str, user: discord.Member) -> int:
     if lang == '*':
-        await client.remove_roles(user, *list(filter(lambda role: role.name.lower() in lowerLanguages, user.roles)))
+        await user.remove_roles(*list(filter(lambda role: role.name.lower() in lowerLanguages, user.roles)))
         return 3
     if lang.lower() not in lowerLanguages:
         return 1
     if not has_role(user, lang):
         return 2
-    await client.remove_roles(user, get_server_role(lang, user.server))
+    await user.remove_roles(get_guild_role(lang, user.guild))
     return 0
 
 
-async def create_lang(role: str, server: discord.Server):
+async def create_lang(role: str, guild: discord.Guild):
     if role.lower() in lowerLanguages:
-        await client.create_role(server, name=get_case_role(role), mentionable=True,
-                                 permissions=discord.Permissions.none())
-    if not is_role(role, server):
+        await guild.create_role(name=get_case_role(role), mentionable=True,
+                                permissions=discord.Permissions.none())
+    if not is_role(role, guild):
         print("Connection was too slow, wait for role " + role)
-        if not await wait_until(is_role, 10, role=role, server=server):
+        if not await wait_until(is_role, 10, role=role, guild=guild):
             raise Exception("ERROR: Role was not created")
 
 
@@ -228,20 +229,20 @@ def has_role(user: discord.Member, role: str):
     return role.lower() in get_string_roles(user)
 
 
-def is_role(role: str, server: discord.Server):
-    return role.lower() in get_server_string_roles(server)
+def is_role(role: str, guild: discord.Guild):
+    return role.lower() in get_guild_string_roles(guild)
 
 
 def get_string_roles(user: discord.Member):
     return list(map(lambda role: str(role).lower(), user.roles))
 
 
-def get_server_string_roles(server: discord.Server):
-    return list(map(lambda role: str(role).lower(), server.roles))
+def get_guild_string_roles(guild: discord.Guild):
+    return list(map(lambda role: str(role).lower(), guild.roles))
 
 
-def get_server_role(name: str, server: discord.Server):
-    for role in server.roles:
+def get_guild_role(name: str, guild: discord.Guild):
+    for role in guild.roles:
         if role.name.lower() == name.lower():
             return role
 
@@ -250,9 +251,9 @@ def get_case_role(role: str):
     return languages[lowerLanguages.index(role.lower())]
 
 
-async def del_all_lang_roles(server: discord.Server):
-    for role in list(filter(lambda r: r.name in languages, server.roles)):
-        await client.delete_role(server, role)
+async def del_all_lang_roles(guild: discord.Guild):
+    for role in list(filter(lambda r: r.name in languages, guild.roles)):
+        await role.delete(reason="Deletion of all language roles")
 
 
 async def send_help(user: discord.User):
@@ -281,7 +282,7 @@ async def send_help(user: discord.User):
             help_embed.set_footer(text=embed_data["footer"]["text"],
                                   icon_url=embed_data["footer"].get("icon_url", discord.Embed.Empty))
 
-        await client.send_message(user, content=None, embed=help_embed)
+        await user.send(content=None, embed=help_embed)
 
 
 def get_command(msg: str):
@@ -317,7 +318,27 @@ async def wait_until(predicate, timeout, period=0.25, *args, **kwargs):
     return False
 
 
+def get_channel_type(channel):
+    if isinstance(channel, discord.DMChannel):
+        return discord.ChannelType.private
+
+    elif isinstance(channel, discord.GroupChannel):
+        return discord.ChannelType.group
+
+    elif isinstance(channel, discord.TextChannel):
+        return discord.ChannelType.text
+
+    elif isinstance(channel, discord.VoiceChannel):
+        return discord.ChannelType.voice
+
+
+def is_private(channel):
+    channel_type = get_channel_type(channel)
+    return channel_type == discord.ChannelType.private or channel_type == discord.ChannelType.group
+
+
 sort_file()
 init_commands()
 print("Loaded {} languages: {}".format(len(languages), ", ".join(languages)))
-client.run("[Bot-Token]")  # TODO: Bot-Token
+
+client.run(open("bot_token", mode="r").read())  # TODO: Bot-Token
