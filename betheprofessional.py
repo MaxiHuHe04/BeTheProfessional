@@ -188,31 +188,29 @@ class Professional:
         return "languages_removed", [role.name for role in remove_roles]
 
 
-    cmd_name, (cmd_func, allow_private, bot_perm_needed, user_perm_needed) = get_cmd_ret
+@bot.event
+async def on_command_error(ctx: commands.Context, error: commands.CommandError):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await send_translated(ctx.channel, "help_sent", mention=ctx.author.mention)
+        await send_help(ctx.author)
 
-    args = rem_discord_markdown(content[len(PREFIX + cmd_name):].strip())
+    elif isinstance(error, commands.errors.CommandNotFound):
+        pass
 
-    if isinstance(msg.channel, discord.DMChannel) or isinstance(msg.channel, discord.GroupChannel) and not allow_private:
-        await send_translated_msg(msg.channel, "private_channel", dict(mention=author.mention))
-        print("Failed to execute command '{}' with args '{}' and message '{}' by user '{}' in private channel"
-              .format(cmd_name, args, content, author.display_name))
-        return
+    elif isinstance(error, commands.errors.BotMissingPermissions):
+        await send_translated(ctx.channel, "bot_no_permission", mention=ctx.author.mention)
 
-    if not is_private(msg.channel):
-        bot_perm = msg.guild.get_member(client.user.id).permissions_in(msg.channel).value
-        user_perm = author.permissions_in(msg.channel).value
+    elif isinstance(error, commands.errors.MissingPermissions):
+        await send_translated(ctx.channel, "no_permission", mention=ctx.author.mention)
 
-        if bot_perm | bot_perm_needed != bot_perm:
-            await send_translated_msg(msg.channel, "bot_no_permission", dict(mention=author.mention))
-            return
+    elif isinstance(error, commands.errors.NoPrivateMessage):
+        await send_translated(ctx.channel, "private_channel")
 
-        if user_perm | user_perm_needed != user_perm:
-            await send_translated_msg(msg.channel, "no_permission", dict(mention=author.mention))
-            return
+    elif isinstance(error, commands.errors.DiscordException):
+        print("Error ocurred:", error, file=sys.stderr)
 
-    await asyncio.coroutine(cmd_func)(args, msg)
-    print("Executed command '%s' with args '%s' and message '%s' by user '%s'" % (cmd_name, args, content,
-                                                                                  author.display_name))
+    else:
+        print(type(error), error, ctx.author, ctx.message, file=sys.stderr)
 
 
 async def send_translated(channel: discord.abc.Messageable, key, **args):
