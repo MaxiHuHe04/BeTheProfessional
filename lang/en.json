@@ -26,6 +26,7 @@
       "+": "Adds a language (multiple languages at once: ``;``)",
       "-": "Removes a language (all languages with ``-*``)",
       "*": "Adds a language to the bot (only for admins)",
+      "/": "Removes a language from the bot (only for admins)",
       "delLangRanks": "Removes all roles created by the bot (for admins)",
       "?": "Displays this help"
     }
