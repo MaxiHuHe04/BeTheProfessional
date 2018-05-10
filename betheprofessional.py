@@ -1,148 +1,192 @@
 import asyncio
 import json
 import re
+import sys
 import time
 from datetime import datetime
-from typing import Tuple, Union, Set
+from typing import Tuple, List, Union, Dict
 
 import discord
 from pytz import timezone
-
-client = discord.Client()
+from discord.ext import commands
 
 MSG_LANG = "de"
 PREFIX = "."
 
-with open("languages", mode='r', encoding="utf-8") as langFile:
-    languages = langFile.readlines()
+bot = commands.Bot(PREFIX, pm_help=True)
+bot.remove_command("help")
 
-with open("lang/%s.json" % MSG_LANG, mode='r', encoding="utf-8") as msgLangFile:
-    msg_data: dict = json.load(msgLangFile)
 
-languages = [x.strip() for x in languages]
-lowerLanguages = [lang.lower() for lang in languages]
+with open("languages", mode="r", encoding="utf-8") as languages_file:
+    languages = {lang.strip().lower(): lang.strip() for lang in languages_file.readlines()}
 
-commands = dict()
-commandDescriptions = dict()
+with open(f"lang/{MSG_LANG}.json", mode="r", encoding="utf-8") as lang_file:
+    msg_data: dict = json.load(lang_file)
+
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user.name}")
 
 
 def sort_file():
-    global languages, lowerLanguages
+    global languages
     languages = sorted(languages)
-    lowerLanguages = [lang.lower() for lang in languages]
-    with open("languages", mode="w", encoding="utf-8") as lang_file:
+    with open("languages", mode="w", encoding="utf-8") as f:
         for l in languages:
-            lang_file.write(l + "\n")
+            f.write(l + "\n")
 
 
-def add_command(cmd: str, func, *, allow_private=False, permissions=0, user_permissions=0):
-    commands[cmd.lower()] = (func, allow_private, permissions, user_permissions)
-    commandDescriptions[cmd.lower()] = (get_msg_data("commands", "syntax", cmd, default=""),
-                                        get_msg_data("commands", "description", cmd, default=""))
+def split_languages(args):
+    args = rem_discord_markdown(args)
+    return [arg.strip() for arg in args.strip(';').split(";")]
 
 
-def init_commands():
-    async def cmd_add_lang(args: str, msg: discord.Message):
-        if args == "":
-            await send_help(msg.author)
-            return
+def get_translation(*keys: str, default=None) -> Union[dict, str, float, bool]:
+    current = None
+    for key in keys:
+        if type(current) is dict:
+            current = current.get(key, None)
+        elif current is None:
+            current = msg_data.get(key, None)
 
-        if ";" in args and len(args) > 1:
-            args = args.strip()
-            if args[-1:] == ";":
-                args = args[:-1]
-
-            result, affected = await add_languages(set([x.strip() for x in args.split(";")]), msg.author)
-        else:
-            result = await add_language(args, msg.author)
-            affected = args
-
-        await send_translated_msg(msg.channel, "language_not_found" if result == 1 else
-                                               "user_has_language_already" if result == 2 else
-                                               "language_added",
-                                  dict(lang=affected, mention=msg.author.mention))
-
-    async def cmd_rem_lang(args: str, msg: discord.Message):
-        if args == "":
-            await send_help(msg.author)
-            return
-
-        result = await rem_language(args, msg.author)
-        await send_translated_msg(msg.channel, "language_not_existing" if result == 1 else
-                                               "language_not_yet_requested" if result == 2 else
-                                               "all_languages_removed" if result == 3 else
-                                               "language_removed", dict(lang=args, mention=msg.author.mention))
-
-    # TODO: per-guild language additions/deletions
-    async def cmd_create_lang(args: str, msg: discord.Message):
-        if args == "":
-            await send_help(msg.author)
-            return
-
-        if args.lower() in lowerLanguages:
-            await send_translated_msg(msg.channel, "language_already_registered",
-                                      dict(mention=msg.author.mention, lang=args))
-            return
-
-        if discord.utils.find(lambda role: role.name.lower() == args.lower(), msg.guild.roles):
-            await send_translated_msg(msg.channel, "create_lang_role_already_existing",
-                                      dict(mention=msg.author.mention, role=args))
-            return
-
-        languages.append(args)
-        sort_file()
-        await send_translated_msg(msg.channel, "language_registered",
-                                  dict(mention=msg.author.mention, lang=args))
-
-    async def cmd_delete_lang(args: str, msg: discord.Message):
-        if args == "":
-            await send_help(msg.author)
-            return
-
-        if args.lower() not in lowerLanguages:
-            await send_translated_msg(msg.channel, "language_not_found", dict(mention=msg.author.mention, lang=args))
-            return
-
-        for lang in languages:
-            if lang.lower() == args.lower():
-                languages.remove(lang)
-
-        sort_file()
-        await send_translated_msg(msg.channel, "language_unregistered",
-                                  dict(mention=msg.author.mention, lang=args))
-
-    # noinspection PyUnusedLocal
-    async def cmd_help(args, msg: discord.Message):
-        await send_help(msg.author)
-        await send_translated_msg(msg.channel, "help_sent", dict(mention=msg.author.mention))
-
-    # noinspection PyUnusedLocal
-    async def cmd_del_lang_ranks(args, msg: discord.Message):
-        await del_all_lang_roles(msg.guild)
-        await send_translated_msg(msg.channel, "all_roles_removed", dict(mention=msg.author.mention))
-
-    add_command("+", cmd_add_lang, permissions=0x10000000)
-    add_command("-", cmd_rem_lang, permissions=0x10000000)
-    add_command("*", cmd_create_lang, user_permissions=0x10000000)
-    add_command("/", cmd_delete_lang, user_permissions=0x10000000)
-    add_command("delLangRanks", cmd_del_lang_ranks, permissions=0x10000000, user_permissions=0x10000000)
-    add_command("?", cmd_help, allow_private=True)
+    return current or default
 
 
-@client.event
-async def on_ready():
-    print("Logged in as %s!" % client.user.name)
-
-
-@client.event
-async def on_message(msg: discord.Message):
-    content: str = msg.content
-    author: discord.Member = msg.author
-
-    get_cmd_ret = get_command(content)
-
-    if get_cmd_ret is None:
+@bot.command(name="+",
+             description=get_translation("commands", "description", "+"),
+             help=get_translation("commands", "syntax", "+"))
+@commands.bot_has_permissions(manage_roles=True)
+@commands.guild_only()
+async def cmd_add_language(ctx: commands.Context, lang, *langs):
+    args = split_languages(" ".join([lang, *langs]))
+    if not args:
+        await send_help(ctx.author)
         return
+
+    prof = Professional(ctx.author)
+    result, affected = await prof.add_languages(*args)
+
+    await send_translated(ctx.channel, result, lang=", ".join(affected), mention=ctx.author.mention)
+
+
+@bot.command(name="-",
+             description=get_translation("commands", "description", "-"),
+             help=get_translation("commands", "syntax", "-"))
+@commands.bot_has_permissions(manage_roles=True)
+@commands.guild_only()
+async def cmd_remove_language(ctx: commands.Context, lang, *langs):
+    args = split_languages(" ".join([lang, *langs]))
+    if not args:
+        await send_help(ctx.author)
+        return
+
+    prof = Professional(ctx.author)
+    result, affected = await prof.remove_languages(*args)
+
+    await send_translated(ctx.channel, result, lang=", ".join(affected), mention=ctx.author.mention)
+
+
+@bot.command(name="*",
+             description=get_translation("commands", "description", "*"),
+             help=get_translation("commands", "syntax", "*"))
+@commands.bot_has_permissions(manage_roles=True)
+@commands.has_permissions(manage_roles=True)
+@commands.guild_only()
+async def cmd_register_language(ctx: commands.Context, lang, *langs):
+    args = " ".join([lang, *langs])
+    if args == "":
+        await send_help(ctx.author)
+        return
+
+    if args.lower() in languages:
+        await send_translated(ctx.channel, "language_already_registered", mention=ctx.author.mention, lang=args)
+        return
+
+    if discord.utils.find(lambda role: role.name.lower() == args.lower(), ctx.guild.roles):
+        await send_translated(ctx.channel, "create_lang_role_already_existing",
+                              mention=ctx.author.mention, role=args)
+        return
+
+    languages[args.lower()] = args
+    await send_translated(ctx.channel, "language_registered",
+                          mention=ctx.author.mention, lang=args)
+
+
+@bot.command(name="/",
+             description=get_translation("commands", "description", "/"),
+             help=get_translation("commands", "syntax", "/"))
+@commands.bot_has_permissions(manage_roles=True)
+@commands.has_permissions(manage_roles=True)
+@commands.guild_only()
+async def cmd_unregister_language(ctx: commands.Context, lang, *langs):
+    args = " ".join([lang, *langs])
+    if args == "":
+        await send_help(ctx.author)
+        return
+
+    if args.lower() not in languages:
+        await send_translated(ctx.channel, "language_not_found", mention=ctx.author.mention, lang=args)
+        return
+
+    del languages[args.lower()]
+    await send_translated(ctx.channel, "language_unregistered", mention=ctx.author.mention, lang=args)
+
+
+@bot.command(name="?",
+             description=get_translation("commands", "description", "?"))
+async def cmd_help(ctx: commands.Context):
+    await send_help(ctx.author)
+    await send_translated(ctx.channel, "help_sent", mention=ctx.author.mention)
+
+
+class Professional:
+    def __init__(self, user: discord.Member):
+        self.user = user
+        self.guild: discord.Guild = user.guild
+        self.available_languages = languages  # TODO: per-guild languages
+
+    async def add_languages(self, *language: str) -> Tuple[str, List[str]]:
+        language = set(language)
+        guild_missing_roles = []
+        user_missing_roles = []
+        for lang in language:
+            if lang.lower() not in self.available_languages:
+                return "language_not_found", [lang]
+            if discord.utils.find(lambda r: r.name.lower() == lang.lower(), self.user.roles):
+                return "user_has_language_already", [lang]
+            add_role = discord.utils.find(lambda r: r.name.lower() == lang.lower(), self.user.guild.roles)
+            if add_role:
+                user_missing_roles.append(add_role)
+            else:
+                guild_missing_roles.append(lang.lower())
+
+        for role in guild_missing_roles:
+            role: discord.Role = await self.guild.create_role(name=languages[role], mentionable=True,
+                                                              permissions=discord.Permissions.none())
+            user_missing_roles.append(role)
+
+        await self.user.add_roles(*user_missing_roles, reason="User added a language role")
+        return "languages_added", [role.name for role in user_missing_roles]
+
+    async def remove_languages(self, *language: str) -> Tuple[str, List[str]]:
+        language = set(language)
+        if "*" in language:
+            await self.user.remove_roles(*list(filter(lambda role: role.name.lower() in self.available_languages,
+                                                      self.user.roles)))
+            return "all_languages_removed", list()
+
+        remove_roles = []
+        for lang in language:
+            if lang.lower() not in self.available_languages:
+                return "language_not_existing", [lang]
+            rem_role = discord.utils.find(lambda r: r.name.lower() == lang.lower(), self.user.roles)
+            if not rem_role:
+                return "language_not_yet_requested", [lang]
+            remove_roles.append(rem_role)
+        await self.user.remove_roles(*remove_roles, reason="User removed a language role")
+        return "languages_removed", [role.name for role in remove_roles]
+
 
     cmd_name, (cmd_func, allow_private, bot_perm_needed, user_perm_needed) = get_cmd_ret
 
@@ -171,97 +215,22 @@ async def on_message(msg: discord.Message):
                                                                                   author.display_name))
 
 
-async def send_translated_msg(channel: discord.abc.Messageable, translation_name: str, formatting_dict: dict):
+async def send_translated(channel: discord.abc.Messageable, key, **args):
     try:
-        await channel.send(get_msg_data(translation_name, default="").format(**formatting_dict))
+        await channel.send(get_translation(key, default="").format(**args))
     except discord.Forbidden:
         pass
 
 
-async def add_language(lang: str, user: discord.Member) -> int:
-    if lang.lower() not in lowerLanguages:
-        return 1
-    if has_role(user, lang):
-        return 2
-    if not is_role(lang, user.guild):
-        await create_lang(lang, user.guild)
-    await user.add_roles(get_guild_role(lang, user.guild), reason="User added a language")
-    return 0
-
-
-async def add_languages(lang_list: Set[str], user: discord.Member) -> Tuple[int, str]:
-    for lang in lang_list:
-        if lang.lower() not in lowerLanguages:
-            return 1, lang
-        if has_role(user, lang):
-            return 2, lang
-
-        if not is_role(lang, user.guild):
-            await create_lang(lang, user.guild)
-
-    await user.add_roles(*[get_guild_role(lang, user.guild) for lang in lang_list])
-    return 0, ", ".join(lang_list)
-
-
-async def rem_language(lang: str, user: discord.Member) -> int:
-    if lang == '*':
-        await user.remove_roles(*list(filter(lambda role: role.name.lower() in lowerLanguages, user.roles)))
-        return 3
-    if lang.lower() not in lowerLanguages:
-        return 1
-    if not has_role(user, lang):
-        return 2
-    await user.remove_roles(get_guild_role(lang, user.guild))
-    return 0
-
-
-async def create_lang(role: str, guild: discord.Guild):
-    if role.lower() in lowerLanguages:
-        await guild.create_role(name=get_case_role(role), mentionable=True,
-                                permissions=discord.Permissions.none())
-    if not is_role(role, guild):
-        print("Connection was too slow, wait for role " + role)
-        if not await wait_until(is_role, 10, role=role, guild=guild):
-            raise Exception("ERROR: Role was not created")
-
-
-def has_role(user: discord.Member, role: str):
-    return role.lower() in get_string_roles(user)
-
-
-def is_role(role: str, guild: discord.Guild):
-    return role.lower() in get_guild_string_roles(guild)
-
-
-def get_string_roles(user: discord.Member):
-    return list(map(lambda role: str(role).lower(), user.roles))
-
-
-def get_guild_string_roles(guild: discord.Guild):
-    return list(map(lambda role: str(role).lower(), guild.roles))
-
-
-def get_guild_role(name: str, guild: discord.Guild):
-    for role in guild.roles:
-        if role.name.lower() == name.lower():
-            return role
-
-
-def get_case_role(role: str):
-    return languages[lowerLanguages.index(role.lower())]
-
-
-async def del_all_lang_roles(guild: discord.Guild):
-    for role in list(filter(lambda r: r.name in languages, guild.roles)):
-        await role.delete(reason="Deletion of all language roles")
-
-
 async def send_help(user: discord.User):
+    cmd_descriptions: Dict[str, Tuple[str, str]] = {cmd.name: (cmd.help, cmd.description) for cmd in bot.commands}
+
     cmd__help = ["``{}{}``".format(cmd, (" " + syntax) if syntax else "") + (" {}".format(desc) if desc else "")
-                 for cmd, (syntax, desc) in commandDescriptions.items()]
+                 for cmd, (syntax, desc) in cmd_descriptions.items()]
+
     cmd__help = "\n".join(cmd__help)
 
-    embed_data: dict = get_msg_data("help_embed")
+    embed_data: dict = get_translation("help_embed")
     if embed_data and isinstance(embed_data, dict):
         if "fields" in embed_data and isinstance(embed_data["fields"], list):
             field_formatting = dict(mention=user.mention, prefix=PREFIX, language_amount=len(languages),
@@ -285,25 +254,6 @@ async def send_help(user: discord.User):
         await user.send(content=None, embed=help_embed)
 
 
-def get_command(msg: str):
-    for cmd in commands.keys():
-        if msg.startswith(PREFIX + cmd):
-            return cmd, commands[cmd]
-
-    return None
-
-
-def get_msg_data(*keys: str, default=None) -> Union[dict, str, float, bool]:
-    current = None
-    for key in keys:
-        if type(current) is dict:
-            current = current.get(key, None)
-        elif current is None:
-            current = msg_data.get(key, None)
-
-    return current or default
-
-
 def rem_discord_markdown(text: str) -> str:
     return re.sub(r"[`\n]+", "", text)
 
@@ -317,28 +267,5 @@ async def wait_until(predicate, timeout, period=0.25, *args, **kwargs):
         await asyncio.sleep(period)
     return False
 
-
-def get_channel_type(channel):
-    if isinstance(channel, discord.DMChannel):
-        return discord.ChannelType.private
-
-    elif isinstance(channel, discord.GroupChannel):
-        return discord.ChannelType.group
-
-    elif isinstance(channel, discord.TextChannel):
-        return discord.ChannelType.text
-
-    elif isinstance(channel, discord.VoiceChannel):
-        return discord.ChannelType.voice
-
-
-def is_private(channel):
-    channel_type = get_channel_type(channel)
-    return channel_type == discord.ChannelType.private or channel_type == discord.ChannelType.group
-
-
-sort_file()
-init_commands()
-print("Loaded {} languages: {}".format(len(languages), ", ".join(languages)))
-
-client.run(open("bot_token", mode="r").read())  # TODO: Bot-Token
+if __name__ == "__main__":
+    bot.run(open("bot_token", mode="r").read())
