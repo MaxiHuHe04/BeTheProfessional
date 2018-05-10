@@ -1,9 +1,9 @@
 {
-  "language_added": "Language ``{lang}`` was added for {mention}.",
+  "languages_added": "Languages ``{lang}`` were added for {mention}.",
   "language_not_found": "Language ``{lang}`` could not be found, {mention}!" ,
   "user_has_language_already": "You have the language ``{lang}`` already, {mention}!",
-  "language_removed": "Language ``{lang}`` was removed for {mention}.",
-  "language_not_existing": "This language doesn't exist, {mention}!",
+  "languages_removed": "Languages ``{lang}`` were removed for {mention}.",
+  "language_not_existing": "The language ``{lang}`` doesn't exist, {mention}!",
   "language_not_yet_requested": "You haven't requested the language ``{lang}`` yet, {mention}!",
   "all_languages_removed": "All languages you have requested were removed, {mention}.",
   "all_roles_removed": "**All** language roles were deleted, {mention}!",
@@ -53,7 +53,6 @@
       "icon_url": "https://cdn.discordapp.com/avatars/349222867344424970/e7c05bc1b19ce0aee9e2f29be049991d.png?size=256"
     },
     "color": 3066993,
-    "__color": "0x2ecc71",
     "timestamp": "{timestamp}"
   }
 }

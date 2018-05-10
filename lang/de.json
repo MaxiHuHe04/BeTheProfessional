@@ -1,10 +1,10 @@
 {
-  "language_added": "Die Sprache ``{lang}`` wurde für {mention} hinzugefügt.",
+  "languages_added": "Die Sprachen ``{lang}`` wurden für {mention} hinzugefügt.",
   "language_not_found": "Die Sprache ``{lang}`` konnte nicht gefunden werden! {mention}" ,
   "user_has_language_already": "Du hast die Sprache ``{lang}`` bereits angefordert, {mention}!",
-  "language_removed": "Sprache ``{lang}`` wurde für {mention} entfernt",
-  "language_not_existing": "Diese Sprache existiert nicht, {mention}!",
-  "language_not_yet_requested": "Du hast diese Sprache noch nicht angefordert, {mention}!",
+  "languages_removed": "Die Sprachen ``{lang}`` wurden für {mention} entfernt.",
+  "language_not_existing": "Die Sprache ``{lang}`` existiert nicht, {mention}!",
+  "language_not_yet_requested": "Du hast die Sprache ``{lang}`` noch nicht angefordert, {mention}!",
   "all_languages_removed": "Alle Sprachen, die du bist jetzt angefordert hast, wurden entfernt. {mention}",
   "all_roles_removed": "**Alle** Sprachenränge wurden entfernt, {mention}!",
   "language_already_registered": "Die Sprache ``{lang}`` ist bereits registriert, {mention}!",
@@ -12,7 +12,7 @@
   "language_registered": "Die Sprache ``{lang}`` wurde erfolgreich registriert, {mention}.",
   "language_unregistered": "Die Sprache ``{lang}`` wurde erfolgreich vom Bot entfernt, {mention}.",
   "no_permission": "Du hast nicht genügend Rechte dafür, {mention}!",
-  "bot_no_permission": "Ich habe leider nicht genügend Rechte dafür, {mention}",
+  "bot_no_permission": "Ich habe leider nicht genügend Rechte dafür, {mention}.",
   "private_channel": "Ich kann dir keinen Rang in einem privaten Gespräch geben!",
   "help_sent": "Die Hilfe wurde dir per Direktnachricht zugesendet, {mention}.",
   "commands": {
@@ -53,7 +53,6 @@
       "icon_url": "https://cdn.discordapp.com/avatars/349222867344424970/e7c05bc1b19ce0aee9e2f29be049991d.png?size=256"
     },
     "color": 3066993,
-    "__color": "0x2ecc71",
     "timestamp": "{timestamp}"
   }
 }
