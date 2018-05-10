@@ -1,21 +1,18 @@
-import asyncio
 import json
 import re
 import sys
-import time
 from datetime import datetime
 from typing import Tuple, List, Union, Dict
 
 import discord
-from pytz import timezone
 from discord.ext import commands
+from pytz import timezone
 
 MSG_LANG = "de"
 PREFIX = "."
 
 bot = commands.Bot(PREFIX, pm_help=True)
 bot.remove_command("help")
-
 
 with open("languages", mode="r", encoding="utf-8") as languages_file:
     languages = {lang.strip().lower(): lang.strip() for lang in languages_file.readlines()}
@@ -255,15 +252,6 @@ async def send_help(user: discord.User):
 def rem_discord_markdown(text: str) -> str:
     return re.sub(r"[`\n]+", "", text)
 
-
-async def wait_until(predicate, timeout, period=0.25, *args, **kwargs):
-    end = time.time() + timeout
-    while time.time() < end:
-        if predicate(*args, **kwargs):
-            return True
-
-        await asyncio.sleep(period)
-    return False
 
 if __name__ == "__main__":
     bot.run(open("bot_token", mode="r").read())
