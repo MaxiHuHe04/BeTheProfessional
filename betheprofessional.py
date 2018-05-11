@@ -36,6 +36,13 @@ async def on_ready():
     print(f"I'm on {sql.get_guild_count()} servers.")
 
 
+@bot.event
+async def on_message(msg: discord.Message):
+    if bot.user in msg.mentions:
+        await send_translated(msg.channel, "type_help",
+                              mention=msg.author.mention, command=bot.command_prefix + cmd_help.name)
+
+
 def split_languages(args):
     args = rem_discord_markdown(args)
     return [arg.strip() for arg in args.strip(';').split(";")]
@@ -141,8 +148,7 @@ async def cmd_unregister_language(ctx: commands.Context, lang, *langs):
 async def cmd_help(ctx: commands.Context):
     await send_help(ctx.author)
 
-    if isinstance(ctx.channel, discord.abc.GuildChannel):
-        await send_translated(ctx.channel, "help_sent", mention=ctx.author.mention)
+    await ctx.message.add_reaction("✅")
 
 
 class Professional:
@@ -223,7 +229,7 @@ plural_formatter = PluralFormatter()
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError):
     if isinstance(error, commands.MissingRequiredArgument):
-        await send_translated(ctx.channel, "help_sent", mention=ctx.author.mention)
+        await ctx.message.add_reaction("❓")
         await send_help(ctx.author)
 
     elif isinstance(error, commands.errors.CommandNotFound):

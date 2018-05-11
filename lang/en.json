@@ -15,6 +15,7 @@
   "bot_no_permission": "I have not enough permissions to do that, {mention}",
   "private_channel": "There are no roles in private chats!",
   "help_sent": "The help was sent to your private chat, {mention}",
+  "type_help": "Type in ``{command}`` to show a list of commands.",
   "commands": {
     "syntax": {
       "+": "<language>",

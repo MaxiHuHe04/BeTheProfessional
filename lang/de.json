@@ -15,6 +15,7 @@
   "bot_no_permission": "Ich habe leider nicht genügend Rechte dafür, {mention}.",
   "private_channel": "Ich kann dir keinen Rang in einem privaten Gespräch geben!",
   "help_sent": "Die Hilfe wurde dir per Direktnachricht zugesendet, {mention}.",
+  "type_help": "Schreibe ``{command}``, um eine Liste der Befehle anzuzeigen.",
   "commands": {
     "syntax": {
       "+": "[Sprache]",
