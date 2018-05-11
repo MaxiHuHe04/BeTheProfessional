@@ -1,8 +1,8 @@
 {
-  "languages_added": "Die Sprachen ``{lang}`` wurden für {mention} hinzugefügt.",
+  "languages_added": "Die Sprache{lang(n)} ``{lang}`` wurde{lang(n)} für {mention} hinzugefügt.",
   "language_not_found": "Die Sprache ``{lang}`` konnte nicht gefunden werden! {mention}" ,
   "user_has_language_already": "Du hast die Sprache ``{lang}`` bereits angefordert, {mention}!",
-  "languages_removed": "Die Sprachen ``{lang}`` wurden für {mention} entfernt.",
+  "languages_removed": "Die Sprache{lang(n)} ``{lang}`` wurde{lang(n)} für {mention} entfernt.",
   "language_not_existing": "Die Sprache ``{lang}`` existiert nicht, {mention}!",
   "language_not_yet_requested": "Du hast die Sprache ``{lang}`` noch nicht angefordert, {mention}!",
   "all_languages_removed": "Alle Sprachen, die du bist jetzt angefordert hast, wurden entfernt. {mention}",

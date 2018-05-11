@@ -200,6 +200,26 @@ class Professional:
         return "languages_removed", [role.name for role in remove_roles]
 
 
+class PluralFormatter(string.Formatter):
+    def get_value(self, key, args, kwargs):
+        if isinstance(key, int):
+            return args[key]
+        if key in kwargs:
+            return kwargs[key]
+        if '(' in key and key.endswith(')'):
+            key, rest = key.split('(', 1)
+            plural = ", " in kwargs[key]
+            suffix = rest.rstrip(')').split(',')
+            if len(suffix) == 1:
+                suffix.insert(0, '')
+            return suffix[1] if plural else suffix[0]
+        else:
+            raise KeyError(key)
+
+
+plural_formatter = PluralFormatter()
+
+
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -227,7 +247,7 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
 
 async def send_translated(channel: discord.abc.Messageable, key, **args):
     try:
-        await channel.send(get_translation(key, default="").format(**args))
+        await channel.send(plural_formatter.format(get_translation(key, default=""), **args))
     except discord.Forbidden:
         pass
 

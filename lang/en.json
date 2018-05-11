@@ -1,8 +1,8 @@
 {
-  "languages_added": "Languages ``{lang}`` were added for {mention}.",
+  "languages_added": "Language{lang(s)} ``{lang}`` {lang(was,were)} added for {mention}.",
   "language_not_found": "Language ``{lang}`` could not be found, {mention}!" ,
   "user_has_language_already": "You have the language ``{lang}`` already, {mention}!",
-  "languages_removed": "Languages ``{lang}`` were removed for {mention}.",
+  "languages_removed": "Language{lang(s)} ``{lang}`` {lang(was,were)} removed for {mention}.",
   "language_not_existing": "The language ``{lang}`` doesn't exist, {mention}!",
   "language_not_yet_requested": "You haven't requested the language ``{lang}`` yet, {mention}!",
   "all_languages_removed": "All languages you have requested were removed, {mention}.",
