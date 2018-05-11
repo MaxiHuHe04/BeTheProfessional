@@ -1,6 +1,8 @@
 import json
 import re
+import string
 import sys
+import copy
 from datetime import datetime
 from sqlhelper import SQLHelper
 from typing import Tuple, List, Union, Dict
@@ -47,7 +49,7 @@ def get_translation(*keys: str, default=None) -> Union[dict, str, float, bool]:
         elif current is None:
             current = translations.get(key, None)
 
-    return current or default
+    return copy.deepcopy(current) or default
 
 
 @bot.command(name="+",
