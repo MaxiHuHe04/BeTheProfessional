@@ -1,11 +1,5 @@
-A
-A+
-APL
-ActionScript
 Angular
-Antlang
 Assembly
-AutoIt
 Bash
 Basic
 Batch
@@ -16,21 +10,14 @@ C++
 CSS
 CoffeeScript
 Common Lisp
-D
-Datalog
-Delphi
-Elixir
-EmacsLisp
 Erlang
 F#
-Factor
 Forth
 Fortran
 Go
 Groovy
 HTML
 Haskell
-Hy
 J
 Java
 Java DiscordBot
@@ -40,35 +27,22 @@ K
 Kotlin
 Lisp
 Lua
-Matlab
-Maxima
-Nial
-OCaml
 Objective-C
 PHP
 Pascal
 Perl
-Perl6
 PowerShell
 Prolog
-Pure
 Python
 Python DiscordBot
-Q
-R
-Racket
-React
 Ruby
-Rust
 SQL
 Scala
-Scheme
 Scratch
-Self
 Smalltalk
-Standard ML
+ML
 Swift
 TypeScript
-VimScript
+Vim
 VisualBasic
 WolframLanguage

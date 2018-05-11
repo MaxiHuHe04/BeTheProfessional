@@ -194,3 +194,4 @@ pip-selfcheck.json
 ###
 .idea/**/misc.xml
 bot_token
+servers.db

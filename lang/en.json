@@ -1,9 +1,9 @@
 {
-  "language_added": "Language ``{lang}`` was added for {mention}.",
+  "languages_added": "Language{lang(s)} ``{lang}`` {lang(was,were)} added for {mention}.",
   "language_not_found": "Language ``{lang}`` could not be found, {mention}!" ,
   "user_has_language_already": "You have the language ``{lang}`` already, {mention}!",
-  "language_removed": "Language ``{lang}`` was removed for {mention}.",
-  "language_not_existing": "This language doesn't exist, {mention}!",
+  "languages_removed": "Language{lang(s)} ``{lang}`` {lang(was,were)} removed for {mention}.",
+  "language_not_existing": "The language ``{lang}`` doesn't exist, {mention}!",
   "language_not_yet_requested": "You haven't requested the language ``{lang}`` yet, {mention}!",
   "all_languages_removed": "All languages you have requested were removed, {mention}.",
   "all_roles_removed": "**All** language roles were deleted, {mention}!",
@@ -15,6 +15,7 @@
   "bot_no_permission": "I have not enough permissions to do that, {mention}",
   "private_channel": "There are no roles in private chats!",
   "help_sent": "The help was sent to your private chat, {mention}",
+  "type_help": "Type in ``{command}`` to show a list of commands.",
   "commands": {
     "syntax": {
       "+": "<language>",
@@ -24,9 +25,9 @@
     },
     "description": {
       "+": "Adds a language (multiple languages at once: ``;``)",
-      "-": "Removes a language (all languages with ``-*``)",
+      "-": "Removes a language (all languages with ``- *``)",
       "*": "Adds a language to the bot (only for admins)",
-      "delLangRanks": "Removes all roles created by the bot (for admins)",
+      "/": "Removes a language from the bot (only for admins)",
       "?": "Displays this help"
     }
   },
@@ -44,15 +45,14 @@
       },
       {
         "name": "Available languages/topics ({language_amount})",
-        "value": "```{languages}```"
+        "value": "```{languages} ```"
       }
     ],
     "footer": {
       "text": "Bot by @MaxiHuHe04#8905",
-      "icon_url": "https://cdn.discordapp.com/avatars/349222867344424970/9e57783e0ad2dfbe786b6e1fe8472c01.webp?size=256"
+      "icon_url": "https://cdn.discordapp.com/avatars/349222867344424970/e7c05bc1b19ce0aee9e2f29be049991d.png?size=256"
     },
     "color": 3066993,
-    "__color": "0x2ecc71",
     "timestamp": "{timestamp}"
   }
 }
