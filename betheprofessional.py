@@ -53,8 +53,8 @@ def get_translation(*keys: str, default=None) -> Union[dict, str, float, bool]:
 @bot.command(name="+",
              description=get_translation("commands", "description", "+"),
              help=get_translation("commands", "syntax", "+"))
-@commands.bot_has_permissions(manage_roles=True)
 @commands.guild_only()
+@commands.bot_has_permissions(manage_roles=True)
 async def cmd_add_language(ctx: commands.Context, lang, *langs):
     args = split_languages(" ".join([lang, *langs]))
     if not args:
@@ -70,8 +70,8 @@ async def cmd_add_language(ctx: commands.Context, lang, *langs):
 @bot.command(name="-",
              description=get_translation("commands", "description", "-"),
              help=get_translation("commands", "syntax", "-"))
-@commands.bot_has_permissions(manage_roles=True)
 @commands.guild_only()
+@commands.bot_has_permissions(manage_roles=True)
 async def cmd_remove_language(ctx: commands.Context, lang, *langs):
     args = split_languages(" ".join([lang, *langs]))
     if not args:
@@ -87,9 +87,9 @@ async def cmd_remove_language(ctx: commands.Context, lang, *langs):
 @bot.command(name="*",
              description=get_translation("commands", "description", "*"),
              help=get_translation("commands", "syntax", "*"))
+@commands.guild_only()
 @commands.bot_has_permissions(manage_roles=True)
 @commands.has_permissions(manage_roles=True)
-@commands.guild_only()
 async def cmd_register_language(ctx: commands.Context, lang, *langs):
     args = " ".join([lang, *langs])
     if args == "":
@@ -113,9 +113,9 @@ async def cmd_register_language(ctx: commands.Context, lang, *langs):
 @bot.command(name="/",
              description=get_translation("commands", "description", "/"),
              help=get_translation("commands", "syntax", "/"))
+@commands.guild_only()
 @commands.bot_has_permissions(manage_roles=True)
 @commands.has_permissions(manage_roles=True)
-@commands.guild_only()
 async def cmd_unregister_language(ctx: commands.Context, lang, *langs):
     args = " ".join([lang, *langs])
     if args == "":
