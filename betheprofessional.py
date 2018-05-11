@@ -2,6 +2,7 @@ import json
 import re
 import sys
 from datetime import datetime
+from sqlhelper import SQLHelper
 from typing import Tuple, List, Union, Dict
 
 import discord
@@ -15,23 +16,22 @@ bot = commands.Bot(PREFIX, pm_help=True)
 bot.remove_command("help")
 
 with open("languages", mode="r", encoding="utf-8") as languages_file:
-    languages = {lang.strip().lower(): lang.strip() for lang in languages_file.readlines()}
+    default_languages = [line.strip() for line in languages_file.readlines()]
+    sql = SQLHelper("servers.db", default_languages)
 
-with open(f"lang/{MSG_LANG}.json", mode="r", encoding="utf-8") as lang_file:
-    msg_data: dict = json.load(lang_file)
+with open(f"lang/{MSG_LANG}.json", mode="r", encoding="utf-8") as translation_file:
+    translations: dict = json.load(translation_file)
 
 
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user.name}")
 
+    for guild in bot.guilds:
+        if not sql.is_guild(guild.id):
+            sql.add_guild(guild.id)
 
-def sort_file():
-    global languages
-    languages = sorted(languages)
-    with open("languages", mode="w", encoding="utf-8") as f:
-        for l in languages:
-            f.write(l + "\n")
+    print(f"I'm on {sql.get_guild_count()} servers.")
 
 
 def split_languages(args):
@@ -45,7 +45,7 @@ def get_translation(*keys: str, default=None) -> Union[dict, str, float, bool]:
         if type(current) is dict:
             current = current.get(key, None)
         elif current is None:
-            current = msg_data.get(key, None)
+            current = translations.get(key, None)
 
     return current or default
 
@@ -96,16 +96,18 @@ async def cmd_register_language(ctx: commands.Context, lang, *langs):
         await send_help(ctx.author)
         return
 
-    if args.lower() in languages:
-        await send_translated(ctx.channel, "language_already_registered", mention=ctx.author.mention, lang=args)
-        return
-
     if discord.utils.find(lambda role: role.name.lower() == args.lower(), ctx.guild.roles):
         await send_translated(ctx.channel, "create_lang_role_already_existing",
                               mention=ctx.author.mention, role=args)
         return
 
-    languages[args.lower()] = args
+    success = sql.add_topic(ctx.guild.id, args)
+    sql.commit()
+
+    if not success:
+        await send_translated(ctx.channel, "language_already_registered", mention=ctx.author.mention, lang=args)
+        return
+
     await send_translated(ctx.channel, "language_registered",
                           mention=ctx.author.mention, lang=args)
 
@@ -122,11 +124,13 @@ async def cmd_unregister_language(ctx: commands.Context, lang, *langs):
         await send_help(ctx.author)
         return
 
-    if args.lower() not in languages:
+    success = sql.remove_topic(ctx.guild.id, args)
+    sql.commit()
+
+    if not success:
         await send_translated(ctx.channel, "language_not_found", mention=ctx.author.mention, lang=args)
         return
 
-    del languages[args.lower()]
     await send_translated(ctx.channel, "language_unregistered", mention=ctx.author.mention, lang=args)
 
 
@@ -134,16 +138,23 @@ async def cmd_unregister_language(ctx: commands.Context, lang, *langs):
              description=get_translation("commands", "description", "?"))
 async def cmd_help(ctx: commands.Context):
     await send_help(ctx.author)
-    await send_translated(ctx.channel, "help_sent", mention=ctx.author.mention)
+
+    if isinstance(ctx.channel, discord.abc.GuildChannel):
+        await send_translated(ctx.channel, "help_sent", mention=ctx.author.mention)
 
 
 class Professional:
     def __init__(self, user: discord.Member):
         self.user = user
         self.guild: discord.Guild = user.guild
-        self.available_languages = languages  # TODO: per-guild languages
+
+    def _update_topics(self):
+        self.available_languages = {topic.lower(): topic for topic in sql.get_topics(self.guild.id)}
+        return self.available_languages
 
     async def add_languages(self, *language: str) -> Tuple[str, List[str]]:
+        self._update_topics()
+
         language = set(language)
         guild_missing_roles = []
         user_missing_roles = []
@@ -159,7 +170,7 @@ class Professional:
                 guild_missing_roles.append(lang.lower())
 
         for role in guild_missing_roles:
-            role: discord.Role = await self.guild.create_role(name=languages[role], mentionable=True,
+            role: discord.Role = await self.guild.create_role(name=self.available_languages[role], mentionable=True,
                                                               permissions=discord.Permissions.none())
             user_missing_roles.append(role)
 
@@ -167,6 +178,8 @@ class Professional:
         return "languages_added", [role.name for role in user_missing_roles]
 
     async def remove_languages(self, *language: str) -> Tuple[str, List[str]]:
+        self._update_topics()
+
         language = set(language)
         if "*" in language:
             await self.user.remove_roles(*list(filter(lambda role: role.name.lower() in self.available_languages,
@@ -228,8 +241,11 @@ async def send_help(user: discord.User):
     embed_data: dict = get_translation("help_embed")
     if embed_data and isinstance(embed_data, dict):
         if "fields" in embed_data and isinstance(embed_data["fields"], list):
+            languages = sql.get_topics(user.guild.id) if isinstance(user, discord.Member) else default_languages
+
             field_formatting = dict(mention=user.mention, prefix=PREFIX, language_amount=len(languages),
-                                    commands=cmd__help, languages=", ".join(languages))
+                                    commands=cmd__help, languages=", ".join(languages),
+                                    guild_count=sql.get_guild_count())
 
             for f in embed_data["fields"]:
                 if "name" in f and "value" in f:
@@ -254,4 +270,10 @@ def rem_discord_markdown(text: str) -> str:
 
 
 if __name__ == "__main__":
-    bot.run(open("bot_token", mode="r").read())
+    sql.setup()
+    try:
+        bot.run(open("bot_token", mode="r").read())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        sql.close()

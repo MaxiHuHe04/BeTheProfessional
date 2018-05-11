@@ -24,10 +24,9 @@
     },
     "description": {
       "+": "Gibt dir eine Sprache (mehrere gleichzeitig mit ``;``)",
-      "-": "Entfernt dir eine Sprache (alle mit ``-*``)",
+      "-": "Entfernt dir eine Sprache (alle mit ``- *``)",
       "*": "Fügt eine Sprache zum Bot hinzu (nur für Admins)",
       "/": "Löscht eine Sprache vom Bot (nur für Admins)",
-      "delLangRanks": "Löscht alle Ränge die der Bot erstellt hat (nur für Admins)",
       "?": "Zeigt diese Hilfe an"
     }
   },
@@ -45,7 +44,7 @@
       },
       {
         "name": "Verfügbare Sprachen/Themengebiete ({language_amount})",
-        "value": "```{languages}```"
+        "value": "```{languages} ```"
       }
     ],
     "footer": {
