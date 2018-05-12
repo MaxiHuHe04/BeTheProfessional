@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import string
 import sys
@@ -11,7 +12,7 @@ import discord
 from discord.ext import commands
 from pytz import timezone
 
-MSG_LANG = "de"
+DEFAULT_MSG_LANG = "de"
 PREFIX = "."
 
 bot = commands.Bot(PREFIX, pm_help=True)
@@ -19,10 +20,12 @@ bot.remove_command("help")
 
 with open("languages", mode="r", encoding="utf-8") as languages_file:
     default_languages = [line.strip() for line in languages_file.readlines()]
-    sql = SQLHelper("servers.db", default_languages)
+    sql = SQLHelper("servers.db", default_languages, DEFAULT_MSG_LANG)
 
-with open(f"lang/{MSG_LANG}.json", mode="r", encoding="utf-8") as translation_file:
-    translations: dict = json.load(translation_file)
+translations = dict()
+for lang_file in os.listdir("lang"):
+    with open(f"lang/{lang_file}", mode="r", encoding="utf-8") as translation_file:
+        translations[os.path.splitext(os.path.basename(lang_file))[0]] = json.load(translation_file)
 
 
 @bot.event
@@ -50,8 +53,11 @@ def split_languages(args):
     return [arg.strip() for arg in args.strip(';').split(";")]
 
 
-def get_translation(*keys: str, default=None) -> Union[dict, str, float, bool]:
-    current = None
+def get_translation(*keys: str, default=None, language=DEFAULT_MSG_LANG) -> Union[dict, str, float, bool]:
+    if language.lower() not in translations:
+        return default
+
+    current = translations.get(language.lower())
     for key in keys:
         if type(current) is dict:
             current = current.get(key, None)
@@ -61,9 +67,7 @@ def get_translation(*keys: str, default=None) -> Union[dict, str, float, bool]:
     return copy.deepcopy(current) or default
 
 
-@bot.command(name="+",
-             description=get_translation("commands", "description", "+"),
-             help=get_translation("commands", "syntax", "+"))
+@bot.command(name="+")
 @commands.guild_only()
 @commands.bot_has_permissions(manage_roles=True)
 async def cmd_add_language(ctx: commands.Context, lang, *langs):
@@ -78,9 +82,7 @@ async def cmd_add_language(ctx: commands.Context, lang, *langs):
     await send_translated(ctx.channel, result, lang=", ".join(affected), mention=ctx.author.mention)
 
 
-@bot.command(name="-",
-             description=get_translation("commands", "description", "-"),
-             help=get_translation("commands", "syntax", "-"))
+@bot.command(name="-")
 @commands.guild_only()
 @commands.bot_has_permissions(manage_roles=True)
 async def cmd_remove_language(ctx: commands.Context, lang, *langs):
@@ -95,9 +97,7 @@ async def cmd_remove_language(ctx: commands.Context, lang, *langs):
     await send_translated(ctx.channel, result, lang=", ".join(affected), mention=ctx.author.mention)
 
 
-@bot.command(name="*",
-             description=get_translation("commands", "description", "*"),
-             help=get_translation("commands", "syntax", "*"))
+@bot.command(name="*")
 @commands.guild_only()
 @commands.bot_has_permissions(manage_roles=True)
 @commands.has_permissions(manage_roles=True)
@@ -123,9 +123,7 @@ async def cmd_register_language(ctx: commands.Context, lang, *langs):
                           mention=ctx.author.mention, lang=args)
 
 
-@bot.command(name="/",
-             description=get_translation("commands", "description", "/"),
-             help=get_translation("commands", "syntax", "/"))
+@bot.command(name="/")
 @commands.guild_only()
 @commands.bot_has_permissions(manage_roles=True)
 @commands.has_permissions(manage_roles=True)
@@ -145,11 +143,23 @@ async def cmd_unregister_language(ctx: commands.Context, lang, *langs):
     await send_translated(ctx.channel, "language_unregistered", mention=ctx.author.mention, lang=args)
 
 
-@bot.command(name="?",
-             description=get_translation("commands", "description", "?"))
+@bot.command(name="?")
 async def cmd_help(ctx: commands.Context):
     await send_help(ctx.author)
 
+    await ctx.message.add_reaction("✅")
+
+
+@bot.command(name="°")
+@commands.guild_only()
+async def cmd_set_translation(ctx: commands.Context, language):
+    language = language.lower()
+    if language not in translations:
+        await ctx.message.add_reaction("❌")
+        return
+
+    sql.set_message_language(ctx.guild.id, language)
+    sql.commit()
     await ctx.message.add_reaction("✅")
 
 
@@ -255,27 +265,38 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
 
 async def send_translated(channel: discord.abc.Messageable, key, **args):
     try:
-        await channel.send(plural_formatter.format(get_translation(key, default=""), **args))
+        guild_origin = channel.guild if isinstance(channel, discord.TextChannel) else None
+        language = sql.get_msg_language(guild_origin.id) if guild_origin else DEFAULT_MSG_LANG
+
+        await channel.send(plural_formatter.format(get_translation(key, default="", language=language), **args))
     except discord.Forbidden:
         pass
 
 
 async def send_help(user: discord.User):
-    cmd_descriptions: Dict[str, Tuple[str, str]] = {cmd.name: (cmd.help, cmd.description) for cmd in bot.commands}
+    translation_lang = sql.get_msg_language(user.guild.id) if isinstance(user, discord.Member) else DEFAULT_MSG_LANG
 
-    cmd__help = ["``{}{}``".format(cmd, (" " + syntax) if syntax else "") + (" {}".format(desc) if desc else "")
+    cmd_descriptions: Dict[str, Tuple[str, str]] = {cmd.name: (get_translation("commands", "syntax", cmd.name,
+                                                                               language=translation_lang),
+                                                               get_translation("commands", "description", cmd.name,
+                                                                               language=translation_lang))
+                                                    for cmd in bot.commands}
+
+    cmd__help = [f"``{cmd}{(' ' + syntax) if syntax else ''}``"
+                 f" {desc.format(translations=', '.join(translations.keys())) if desc else ''}"
                  for cmd, (syntax, desc) in cmd_descriptions.items()]
 
     cmd__help = "\n".join(cmd__help)
 
-    embed_data: dict = get_translation("help_embed")
+    embed_data: dict = get_translation("help_embed", language=translation_lang)
+
     if embed_data and isinstance(embed_data, dict):
         if "fields" in embed_data and isinstance(embed_data["fields"], list):
             languages = sql.get_topics(user.guild.id) if isinstance(user, discord.Member) else default_languages
 
             field_formatting = dict(mention=user.mention, prefix=PREFIX, language_amount=len(languages),
                                     commands=cmd__help, languages=", ".join(languages),
-                                    guild_count=sql.get_guild_count())
+                                    guild_count=sql.get_guild_count(), translations=", ".join(translations.keys()))
 
             for f in embed_data["fields"]:
                 if "name" in f and "value" in f:

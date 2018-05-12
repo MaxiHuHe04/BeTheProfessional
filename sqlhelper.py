@@ -4,12 +4,14 @@ from typing import List
 
 class SQLHelper:
 
-    def __init__(self, filename: str, default_languages: List[str]):
+    def __init__(self, filename: str, default_languages: List[str], default_message_language):
         self.conn = sqlite3.connect(filename)
         self.default_languages = default_languages
+        self.default_msg_language = default_message_language
 
     def setup(self):
         self.conn.execute("CREATE TABLE IF NOT EXISTS languages (guild_id int PRIMARY KEY, topics text)")
+        self.conn.execute("CREATE TABLE IF NOT EXISTS msg_language (guild_id int PRIMARY KEY, language text)")
 
     def __enter__(self):
         return self
@@ -22,6 +24,7 @@ class SQLHelper:
 
     def add_guild(self, guild_id: int):
         self.conn.execute("INSERT INTO languages VALUES (?, ?)", (guild_id, "\n".join(self.default_languages)))
+        self.conn.execute("INSERT INTO msg_language VALUES (?, ?)", (guild_id, self.default_msg_language))
 
     def get_guild_count(self):
         return self.conn.execute("SELECT COUNT(*) FROM languages").fetchone()[0]
@@ -50,6 +53,16 @@ class SQLHelper:
         del before[topic.lower()]
         self.conn.execute("UPDATE languages SET topics=? WHERE guild_id=?", ("\n".join(before.values()), guild_id))
         return True
+
+    def get_msg_language(self, guild_id: int):
+        if not self.is_guild(guild_id):
+            self.add_guild(guild_id)
+        return self.conn.execute("SELECT language FROM msg_language WHERE guild_id=?", (guild_id,)).fetchone()[0]
+
+    def set_message_language(self, guild_id: int, language: str):
+        if not self.is_guild(guild_id):
+            self.add_guild(guild_id)
+        self.conn.execute("UPDATE msg_language SET language=? WHERE guild_id=?", (language, guild_id))
 
     def commit(self):
         self.conn.commit()

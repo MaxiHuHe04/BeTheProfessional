@@ -21,14 +21,16 @@
       "+": "[Sprache]",
       "-": "[Sprache]",
       "*": "[Sprache]",
-      "/": "[Sprache]"
+      "/": "[Sprache]",
+      "°": "[Sprachkürzel]"
     },
     "description": {
       "+": "Gibt dir eine Sprache (mehrere gleichzeitig mit ``;``)",
       "-": "Entfernt dir eine Sprache (alle mit ``- *``)",
       "*": "Fügt eine Sprache zum Bot hinzu (nur für Admins)",
       "/": "Löscht eine Sprache vom Bot (nur für Admins)",
-      "?": "Zeigt diese Hilfe an"
+      "?": "Zeigt diese Hilfe an",
+      "°": "Legt die Sprache eines Servers fest (Übersetzungen: {translations})"
     }
   },
   "help_embed": {

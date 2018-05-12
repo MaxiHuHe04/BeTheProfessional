@@ -21,18 +21,20 @@
       "+": "<language>",
       "-": "<language>",
       "*": "<language>",
-      "/": "<language>"
+      "/": "<language>",
+      "°": "<language-code>"
     },
     "description": {
       "+": "Adds a language (multiple languages at once: ``;``)",
       "-": "Removes a language (all languages with ``- *``)",
       "*": "Adds a language to the bot (only for admins)",
       "/": "Removes a language from the bot (only for admins)",
-      "?": "Displays this help"
+      "?": "Displays this help",
+      "°": "Sets the language of a server (Available: {translations})"
     }
   },
   "help_embed": {
-    "title": "BeTheProfessional help",
+    "title": "BeTheProfessional Help",
     "description": "Help for BeTheProfessional\n[GitHub Link](https://github.com/MaxiHuHe04/BeTheProfessional)",
     "fields": [
       {
