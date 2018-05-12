@@ -42,6 +42,8 @@ async def on_message(msg: discord.Message):
         await send_translated(msg.channel, "type_help",
                               mention=msg.author.mention, command=bot.command_prefix + cmd_help.name)
 
+    await bot.process_commands(msg)
+
 
 def split_languages(args):
     args = rem_discord_markdown(args)
