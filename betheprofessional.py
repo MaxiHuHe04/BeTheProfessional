@@ -152,6 +152,7 @@ async def cmd_help(ctx: commands.Context):
 
 @bot.command(name="°")
 @commands.guild_only()
+@commands.has_permissions(manage_roles=True)
 async def cmd_set_translation(ctx: commands.Context, language):
     language = language.lower()
     if language not in translations:
