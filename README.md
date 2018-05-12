@@ -12,11 +12,11 @@ Languages are separated with `;`.
 Commands for administrators:
 - `.* <language>` Adds an available language to the bot 
 - `./ <language>` Removes a language from the bot
+- `.° <language-code>` Sets the language of a server (Currently available: `en` and `de`)
 
 
 ### Credits
 Logo made by [Freepik](http://www.freepik.com/) from www.flaticon.com
 
-<br>
 
 ### [Invite me](https://discordapp.com/api/oauth2/authorize?client_id=349222867344424970&permissions=268503104&scope=bot)
