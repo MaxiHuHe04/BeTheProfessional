@@ -294,7 +294,7 @@ async def send_help(user: discord.User):
     if embed_data and isinstance(embed_data, dict):
         if "fields" in embed_data and isinstance(embed_data["fields"], list):
             languages = sql.get_topics(user.guild.id) if isinstance(user, discord.Member) else default_languages
-            languages.sort()
+            languages.sort(key=str.casefold)
 
             field_formatting = dict(mention=user.mention, prefix=PREFIX, language_amount=len(languages),
                                     commands=cmd__help, languages=", ".join(languages),
