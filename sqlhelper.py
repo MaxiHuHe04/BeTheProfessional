@@ -31,7 +31,8 @@ class SQLHelper:
 
     def get_topics(self, guild_id: int) -> List[str]:
         result = self.conn.execute("SELECT topics FROM languages WHERE guild_id=?", (guild_id,)).fetchone()
-        return result[0].strip().split("\n") if result and result[0].strip().split("\n")[0] else list()
+        topics = result[0].strip().split("\n")
+        return topics if topics and topics[0] else list()
 
     def add_topic(self, guild_id: int, topic: str) -> bool:
         if not self.conn.execute("SELECT guild_id FROM languages WHERE guild_id=?", (guild_id,)):

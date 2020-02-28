@@ -294,6 +294,7 @@ async def send_help(user: discord.User):
     if embed_data and isinstance(embed_data, dict):
         if "fields" in embed_data and isinstance(embed_data["fields"], list):
             languages = sql.get_topics(user.guild.id) if isinstance(user, discord.Member) else default_languages
+            languages.sort()
 
             field_formatting = dict(mention=user.mention, prefix=PREFIX, language_amount=len(languages),
                                     commands=cmd__help, languages=", ".join(languages),
@@ -308,13 +309,13 @@ async def send_help(user: discord.User):
                 embed_data["timestamp"] = embed_data["timestamp"].format(
                     timestamp=datetime.now(timezone("Europe/Berlin")).astimezone(timezone("UTC")).isoformat())
 
-        help_embed = discord.Embed.from_data(embed_data)
+        help_embed = discord.Embed.from_dict(embed_data)
 
         if "footer" in embed_data and isinstance(embed_data["footer"], dict) and "text" in embed_data["footer"]:
             help_embed.set_footer(text=embed_data["footer"]["text"],
                                   icon_url=embed_data["footer"].get("icon_url", discord.Embed.Empty))
 
-        await user.send(content=None, embed=help_embed)
+        await user.send(embed=help_embed)
 
 
 def rem_discord_markdown(text: str) -> str:
