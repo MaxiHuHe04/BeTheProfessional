@@ -36,7 +36,7 @@ async def on_ready():
         if not sql.is_guild(guild.id):
             sql.add_guild(guild.id)
 
-    print(f"I'm on {sql.get_guild_count()} servers.")
+    print(f"I'm on {len(bot.guilds)} servers.")
 
 
 @bot.event
